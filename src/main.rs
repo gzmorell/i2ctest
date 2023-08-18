@@ -1,9 +1,11 @@
 use i2c_linux::I2c;
 use std::cell::RefCell;
 use std::fs::File;
+use std::io::Read;
 
 const I2C_BUS: &'static str = "/dev/i2c-10";
 const I2C_ADDRESS: u16 = 0x2f;
+const TEMP_FILE: &'static str = "/sys/class/thermal/thermal_zone0/temp";
 
 const DRV_CONFIG_PORT: u8 = 0x20; // Configuration of alert, smbus, watchdog, clock
 const FAN_STAT_PORT: u8 = 0x24; // Failue in watchdog, fan driver, spin or stall
@@ -137,6 +139,13 @@ impl<'a> Emc2301<'a> {
 }
 
 fn main() {
+    let mut temp_file = File::open(TEMP_FILE).unwrap();
+    let mut temp = String::new();
+    temp_file.read_to_string(&mut temp).unwrap();
+    println!("{temp}");
+    let temp: i32 = temp.trim().parse().unwrap();
+    let temp: f64 = Into::<f64>::into(temp) / 1000.0;
+    println!("Temperature: {temp}");
     let i2c = Emc2301::new(I2C_BUS, I2C_ADDRESS);
     println!(
         "Opened I2C on path {} and port {}",
